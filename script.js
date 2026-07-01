@@ -1,67 +1,386 @@
+// const taskInput = document.getElementById("taskInput");
+// const addBtn = document.getElementById("addBtn");
+// const taskList = document.getElementById("taskList");
+// const taskCount = document.getElementById("taskCount");
+
+// function updateTaskCount() {
+
+//     const total = document.querySelectorAll(".task").length;
+
+//     taskCount.textContent = `${total} Tasks Left`;
+
+// }
+
+// function addTask(){
+
+//     const text = taskInput.value.trim();
+
+//     if(text===""){
+
+//         alert("Please enter a task.");
+
+//         return;
+
+//     }
+
+//     const li=document.createElement("li");
+
+//     li.className="task";
+
+//     li.innerHTML=`
+
+//         <div class="left">
+
+//             <input type="checkbox">
+
+//             <span>${text}</span>
+
+//         </div>
+
+//         <div class="actions">
+
+//             <button class="edit">✏️</button>
+
+//             <button class="delete">🗑️</button>
+
+//         </div>
+
+//     `;
+
+//     taskList.appendChild(li);
+
+//     taskInput.value="";
+
+//     taskInput.focus();
+
+//     updateTaskCount();
+
+// }
+
+// addBtn.addEventListener("click",addTask);
+
+// taskInput.addEventListener("keypress",function(e){
+
+//     if(e.key==="Enter"){
+
+//         addTask();
+
+//     }
+
+// });
+
+// taskList.addEventListener("click",function(e){
+
+//     const task=e.target.closest(".task");
+
+//     if(!task) return;
+
+//     // Delete Task
+
+//     if(e.target.classList.contains("delete")){
+
+//         task.remove();
+
+//         updateTaskCount();
+
+//     }
+
+//     // Edit Task
+
+//     if(e.target.classList.contains("edit")){
+
+//         const span=task.querySelector("span");
+
+//         const updated=prompt("Edit Task",span.textContent);
+
+//         if(updated!==null && updated.trim()!==""){
+
+//             span.textContent=updated;
+
+//         }
+
+//     }
+
+// });
+
+// taskList.addEventListener("change",function(e){
+
+//     if(e.target.type==="checkbox"){
+
+//         const span=e.target.nextElementSibling;
+
+//         span.classList.toggle("completed");
+
+//     }
+
+// });
+
+// updateTaskCount();
+
+// ===============================
+// Todo App - Milestone 3
+// Part 1
+// ===============================
+
+// DOM Elements
 const taskInput = document.getElementById("taskInput");
 const addBtn = document.getElementById("addBtn");
 const taskList = document.getElementById("taskList");
 const taskCount = document.getElementById("taskCount");
+const searchInput = document.getElementById("searchInput");
+const clearCompletedBtn = document.getElementById("clearCompleted");
+
+const filterButtons = document.querySelectorAll(".filters button");
+
+let tasks = [];
+let currentFilter = "all";
+
+// ===============================
+// Local Storage
+// ===============================
+
+function saveTasks() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function loadTasks() {
+    const savedTasks = JSON.parse(localStorage.getItem("tasks"));
+
+    if (savedTasks) {
+        tasks = savedTasks;
+    }
+
+    renderTasks();
+}
+
+// ===============================
+// Task Counter
+// ===============================
 
 function updateTaskCount() {
 
-    const total = document.querySelectorAll(".task").length;
+    const activeTasks = tasks.filter(task => !task.completed).length;
 
-    taskCount.textContent = `${total} Tasks Left`;
+    taskCount.textContent = `${activeTasks} Task${activeTasks !== 1 ? "s" : ""} Left`;
 
 }
 
-function addTask(){
+// ===============================
+// Add Task
+// ===============================
+
+function addTask() {
 
     const text = taskInput.value.trim();
 
-    if(text===""){
-
+    if (text === "") {
         alert("Please enter a task.");
-
         return;
+    }
+
+    tasks.push({
+
+        id: Date.now(),
+
+        text: text,
+
+        completed: false
+
+    });
+
+    saveTasks();
+
+    renderTasks();
+
+    taskInput.value = "";
+
+    taskInput.focus();
+
+}
+
+// ===============================
+// Delete Task
+// ===============================
+
+function deleteTask(id) {
+
+    tasks = tasks.filter(task => task.id !== id);
+
+    saveTasks();
+
+    renderTasks();
+
+}
+
+// ===============================
+// Toggle Complete
+// ===============================
+
+function toggleTask(id) {
+
+    tasks = tasks.map(task => {
+
+        if (task.id === id) {
+
+            task.completed = !task.completed;
+
+        }
+
+        return task;
+
+    });
+
+    saveTasks();
+
+    renderTasks();
+
+}
+
+// ===============================
+// Edit Task
+// ===============================
+
+function editTask(id) {
+
+    const task = tasks.find(task => task.id === id);
+
+    const updated = prompt("Edit Task", task.text);
+
+    if (updated === null) return;
+
+    if (updated.trim() === "") return;
+
+    task.text = updated.trim();
+
+    saveTasks();
+
+    renderTasks();
+
+}
+
+// ===============================
+// Clear Completed
+// ===============================
+
+function clearCompleted() {
+
+    tasks = tasks.filter(task => !task.completed);
+
+    saveTasks();
+
+    renderTasks();
+
+}
+
+// ===============================
+// Render Tasks
+// ===============================
+
+function renderTasks() {
+
+    taskList.innerHTML = "";
+
+    let filteredTasks = [...tasks];
+
+    // Search
+
+    const keyword = searchInput.value.toLowerCase();
+
+    if (keyword !== "") {
+
+        filteredTasks = filteredTasks.filter(task =>
+            task.text.toLowerCase().includes(keyword)
+        );
 
     }
 
-    const li=document.createElement("li");
+    // Filter
 
-    li.className="task";
+    if (currentFilter === "active") {
 
-    li.innerHTML=`
+        filteredTasks = filteredTasks.filter(task => !task.completed);
 
-        <div class="left">
+    }
 
-            <input type="checkbox">
+    if (currentFilter === "completed") {
 
-            <span>${text}</span>
+        filteredTasks = filteredTasks.filter(task => task.completed);
 
-        </div>
+    }
 
-        <div class="actions">
+    filteredTasks.forEach(task => {
 
-            <button class="edit">✏️</button>
+        const li = document.createElement("li");
 
-            <button class="delete">🗑️</button>
+        li.className = "task";
 
-        </div>
+        li.innerHTML = `
+            <div class="left">
 
-    `;
+                <input
+                    type="checkbox"
+                    ${task.completed ? "checked" : ""}
+                >
 
-    taskList.appendChild(li);
+                <span class="${task.completed ? "completed" : ""}">
+                    ${task.text}
+                </span>
 
-    taskInput.value="";
+            </div>
 
-    taskInput.focus();
+            <div class="actions">
+
+                <button class="edit">
+                    ✏️
+                </button>
+
+                <button class="delete">
+                    🗑️
+                </button>
+
+            </div>
+        `;
+
+        // Checkbox
+        li.querySelector("input").addEventListener("change", () => {
+
+            toggleTask(task.id);
+
+        });
+
+        // Edit
+        li.querySelector(".edit").addEventListener("click", () => {
+
+            editTask(task.id);
+
+        });
+
+        // Delete
+        li.querySelector(".delete").addEventListener("click", () => {
+
+            deleteTask(task.id);
+
+        });
+
+        taskList.appendChild(li);
+
+    });
 
     updateTaskCount();
 
 }
 
-addBtn.addEventListener("click",addTask);
+// ===============================
+// Event Listeners
+// ===============================
 
-taskInput.addEventListener("keypress",function(e){
+// Add Task Button
+addBtn.addEventListener("click", addTask);
 
-    if(e.key==="Enter"){
+// Press Enter to Add Task
+taskInput.addEventListener("keypress", function (e) {
+
+    if (e.key === "Enter") {
 
         addTask();
 
@@ -69,50 +388,86 @@ taskInput.addEventListener("keypress",function(e){
 
 });
 
-taskList.addEventListener("click",function(e){
+// Search Tasks
+searchInput.addEventListener("input", function () {
 
-    const task=e.target.closest(".task");
+    renderTasks();
 
-    if(!task) return;
+});
 
-    // Delete Task
+// Filter Buttons
+filterButtons.forEach(button => {
 
-    if(e.target.classList.contains("delete")){
+    button.addEventListener("click", function () {
 
-        task.remove();
+        // Remove active class from all buttons
+        filterButtons.forEach(btn => btn.classList.remove("active"));
 
-        updateTaskCount();
+        // Add active class to clicked button
+        this.classList.add("active");
 
-    }
+        const filter = this.textContent.trim().toLowerCase();
 
-    // Edit Task
+        if (filter === "all") {
 
-    if(e.target.classList.contains("edit")){
+            currentFilter = "all";
 
-        const span=task.querySelector("span");
+        } else if (filter === "active") {
 
-        const updated=prompt("Edit Task",span.textContent);
+            currentFilter = "active";
 
-        if(updated!==null && updated.trim()!==""){
+        } else {
 
-            span.textContent=updated;
+            currentFilter = "completed";
 
         }
 
+        renderTasks();
+
+    });
+
+});
+
+// Clear Completed Button
+clearCompletedBtn.addEventListener("click", function () {
+
+    const completedCount = tasks.filter(task => task.completed).length;
+
+    if (completedCount === 0) {
+
+        alert("There are no completed tasks.");
+
+        return;
+
+    }
+
+    if (confirm("Are you sure you want to remove all completed tasks?")) {
+
+        clearCompleted();
+
     }
 
 });
 
-taskList.addEventListener("change",function(e){
+// ===============================
+// Initial Load
+// ===============================
 
-    if(e.target.type==="checkbox"){
+loadTasks();
 
-        const span=e.target.nextElementSibling;
+// ===============================
+// Optional Keyboard Shortcut
+// Ctrl + / focuses the input box
+// ===============================
 
-        span.classList.toggle("completed");
+document.addEventListener("keydown", function (e) {
+
+    if (e.ctrlKey && e.key === "/") {
+
+        e.preventDefault();
+
+        taskInput.focus();
 
     }
 
 });
-
-updateTaskCount();
