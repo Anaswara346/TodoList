@@ -1,48 +1,118 @@
-// Select Elements
 const taskInput = document.getElementById("taskInput");
 const addBtn = document.getElementById("addBtn");
 const taskList = document.getElementById("taskList");
+const taskCount = document.getElementById("taskCount");
 
-// Function to Add Task
-function addTask() {
+function updateTaskCount() {
 
-    // Get input value
-    const taskText = taskInput.value.trim();
+    const total = document.querySelectorAll(".task").length;
 
-    // Prevent empty tasks
-    if (taskText === "") {
-        alert("Please enter a task.");
-        return;
-    }
+    taskCount.textContent = `${total} Tasks Left`;
 
-    // Create list item
-    const li = document.createElement("li");
-
-    li.textContent = taskText;
-
-    // Add some temporary styling
-    li.style.background = "#f8fafc";
-    li.style.padding = "15px";
-    li.style.marginBottom = "10px";
-    li.style.borderRadius = "10px";
-    li.style.border = "1px solid #ddd";
-
-    // Add task to list
-    taskList.appendChild(li);
-
-    // Clear input field
-    taskInput.value = "";
-
-    // Focus back on input
-    taskInput.focus();
 }
 
-// Add task on button click
-addBtn.addEventListener("click", addTask);
+function addTask(){
 
-// Add task when Enter key is pressed
-taskInput.addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-        addTask();
+    const text = taskInput.value.trim();
+
+    if(text===""){
+
+        alert("Please enter a task.");
+
+        return;
+
     }
+
+    const li=document.createElement("li");
+
+    li.className="task";
+
+    li.innerHTML=`
+
+        <div class="left">
+
+            <input type="checkbox">
+
+            <span>${text}</span>
+
+        </div>
+
+        <div class="actions">
+
+            <button class="edit">✏️</button>
+
+            <button class="delete">🗑️</button>
+
+        </div>
+
+    `;
+
+    taskList.appendChild(li);
+
+    taskInput.value="";
+
+    taskInput.focus();
+
+    updateTaskCount();
+
+}
+
+addBtn.addEventListener("click",addTask);
+
+taskInput.addEventListener("keypress",function(e){
+
+    if(e.key==="Enter"){
+
+        addTask();
+
+    }
+
 });
+
+taskList.addEventListener("click",function(e){
+
+    const task=e.target.closest(".task");
+
+    if(!task) return;
+
+    // Delete Task
+
+    if(e.target.classList.contains("delete")){
+
+        task.remove();
+
+        updateTaskCount();
+
+    }
+
+    // Edit Task
+
+    if(e.target.classList.contains("edit")){
+
+        const span=task.querySelector("span");
+
+        const updated=prompt("Edit Task",span.textContent);
+
+        if(updated!==null && updated.trim()!==""){
+
+            span.textContent=updated;
+
+        }
+
+    }
+
+});
+
+taskList.addEventListener("change",function(e){
+
+    if(e.target.type==="checkbox"){
+
+        const span=e.target.nextElementSibling;
+
+        span.classList.toggle("completed");
+
+    }
+
+});
+
+updateTaskCount();

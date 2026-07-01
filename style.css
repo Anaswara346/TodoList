@@ -177,3 +177,102 @@ h1{
     cursor:pointer;
 
 }
+
+/* Task Card */
+
+.task{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    background:#f8fafc;
+
+    padding:15px;
+
+    border-radius:12px;
+
+    margin-bottom:15px;
+
+    border:1px solid #e5e7eb;
+
+    transition:.3s;
+}
+
+.task:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}
+
+.left span{
+
+    font-size:16px;
+
+}
+
+.completed{
+
+    text-decoration:line-through;
+
+    color:#888;
+
+}
+
+.actions{
+
+    display:flex;
+
+    gap:10px;
+
+}
+
+.actions button{
+
+    border:none;
+
+    padding:8px 12px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+
+.edit{
+
+    background:#facc15;
+
+}
+
+.delete{
+
+    background:#ef4444;
+
+    color:white;
+
+}
+
+.left input{
+
+    width:18px;
+
+    height:18px;
+
+    cursor:pointer;
+
+}
