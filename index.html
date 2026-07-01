@@ -1,90 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Modern Todo App</title>
-
-    <link rel="stylesheet" href="style.css">
-
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-
-</head>
-
-<body>
-
-    <div class="container">
-
-        <!-- Header -->
-        <header>
-
-            <h1>📝 My Todo App</h1>
-
-            <p>Stay organized and productive</p>
-
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flow Planner</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="app-card" aria-label="To-do dashboard">
+        <header class="app-header">
+          <div class="brand-block">
+            <div class="brand-icon" aria-hidden="true">✓</div>
+            <div>
+              <h1>Flow Planner</h1>
+              <p>Organize your week with calm focus.</p>
+            </div>
+          </div>
+          <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle dark mode">
+            🌙
+          </button>
         </header>
 
-        <!-- Add Task -->
-        <div class="add-task">
+        <section class="stats-card" aria-label="Task statistics">
+          <div class="stats-header">
+            <div>
+              <p class="eyebrow">Overview</p>
+              <h2>Progress Snapshot</h2>
+            </div>
+            <div class="progress-pill" id="completionPill">0% done</div>
+          </div>
+          <div class="progress-bar" aria-hidden="true">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+          <div class="stats-grid">
+            <article class="stat-tile">
+              <span class="stat-label">Total</span>
+              <strong id="totalTasks">0</strong>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Active</span>
+              <strong id="activeTasks">0</strong>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Completed</span>
+              <strong id="completedTasks">0</strong>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Overdue</span>
+              <strong id="overdueTasks">0</strong>
+            </article>
+          </div>
+        </section>
 
+        <section class="composer-card" aria-label="Task composer">
+          <form id="taskForm" class="task-form">
+            <label class="sr-only" for="taskInput">Task title</label>
             <input
-                type="text"
-                id="taskInput"
-                placeholder="Enter a new task...">
+              id="taskInput"
+              name="taskTitle"
+              type="text"
+              placeholder="What needs your attention?"
+              autocomplete="off"
+              maxlength="140"
+            />
 
-            <button id="addBtn">
-                Add
-            </button>
+            <div class="task-meta-grid">
+              <label class="field">
+                <span>Priority</span>
+                <select id="prioritySelect" name="priority">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
 
-        </div>
+              <label class="field">
+                <span>Category</span>
+                <select id="categorySelect" name="category">
+                  <option value="work">Work</option>
+                  <option value="personal" selected>Personal</option>
+                  <option value="study">Study</option>
+                  <option value="shopping">Shopping</option>
+                  <option value="health">Health</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
 
-        <!-- Search -->
-        <div class="search-box">
+              <label class="field">
+                <span>Due date</span>
+                <input id="dueDateInput" name="dueDate" type="date" />
+              </label>
+            </div>
 
+            <div class="composer-actions">
+              <button id="addBtn" class="primary-btn" type="submit">Add Task</button>
+              <button id="cancelEditBtn" class="secondary-btn hidden" type="button">Cancel</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="toolbar" aria-label="Task controls">
+          <label class="search-field" for="searchInput">
+            <span aria-hidden="true">🔎</span>
             <input
-                type="text"
-                id="searchInput"
-                placeholder="🔍 Search tasks...">
+              id="searchInput"
+              name="search"
+              type="search"
+              placeholder="Search by title or category"
+              autocomplete="off"
+            />
+          </label>
 
+          <div id="filterButtons" class="filter-bar" role="group" aria-label="Filter tasks">
+            <button class="filter-pill active" type="button" data-filter="all">All</button>
+            <button class="filter-pill" type="button" data-filter="active">Active</button>
+            <button class="filter-pill" type="button" data-filter="completed">Completed</button>
+            <button class="filter-pill" type="button" data-filter="high-priority">High Priority</button>
+            <button class="filter-pill" type="button" data-filter="due-today">Due Today</button>
+            <button class="filter-pill" type="button" data-filter="overdue">Overdue</button>
+          </div>
+        </section>
+
+        <section class="toolbar-secondary" aria-label="Sorting and cleanup">
+          <label class="sort-field" for="sortSelect">
+            <span>Sort by</span>
+            <select id="sortSelect" name="sort">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="dueDate">Due Date</option>
+              <option value="priority">Priority</option>
+              <option value="alphabetical">Alphabetical</option>
+            </select>
+          </label>
+          <button id="clearCompleted" class="secondary-btn" type="button">Clear completed</button>
+        </section>
+
+        <ul id="taskList" class="task-list" aria-live="polite"></ul>
+
+        <div id="emptyState" class="empty-state" aria-live="polite">
+          <div class="empty-icon" aria-hidden="true">📭</div>
+          <h2>No Tasks Yet</h2>
+          <p>Add your first task above to start building momentum.</p>
         </div>
+      </section>
+    </main>
 
-        <!-- Filter Buttons -->
-        <div class="filters">
-
-            <button class="active">All</button>
-
-            <button>Active</button>
-
-            <button>Completed</button>
-
-        </div>
-
-        <!-- Task List -->
-        <ul id="taskList">
-
-        </ul>
-
-        <!-- Footer -->
-        <div class="footer">
-
-            <span id="taskCount">
-                0 Tasks Left
-            </span>
-
-            <button id="clearCompleted">
-                Clear Completed
-            </button>
-
-        </div>
-
-    </div>
-
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="script.js"></script>
-
-</body>
-
+  </body>
 </html>
