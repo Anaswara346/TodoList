@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Todo App</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>📝 My Todo App</h1>
+
+    <!-- Add Task -->
+    <div class="add-task">
+
+        <input
+            type="text"
+            id="taskInput"
+            placeholder="Enter a new task">
+
+        <button id="addBtn">
+            Add
+        </button>
+
+    </div>
+
+    <!-- Search -->
+
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="Search tasks...">
+
+    <!-- Filter Buttons -->
+
+    <div class="filters">
+
+        <button class="active">All</button>
+
+        <button>Active</button>
+
+        <button>Completed</button>
+
+    </div>
+
+    <!-- Task List -->
+
+    <ul id="taskList">
+
+    </ul>
+
+    <!-- Footer -->
+
+    <div class="footer">
+
+        <span>0 Tasks Left</span>
+
+        <button>Clear Completed</button>
+
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
