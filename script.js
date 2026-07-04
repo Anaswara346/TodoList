@@ -4,9 +4,12 @@
 // ===============================
 const taskForm = document.getElementById("taskForm");
 const taskInput = document.getElementById("taskInput");
+const descriptionInput = document.getElementById("descriptionInput");
 const prioritySelect = document.getElementById("prioritySelect");
 const categorySelect = document.getElementById("categorySelect");
 const dueDateInput = document.getElementById("dueDateInput");
+const progressInput = document.getElementById("progressInput") || { value: "0" };
+const statusSelect = document.getElementById("statusSelect");
 const addBtn = document.getElementById("addBtn");
 const cancelEditBtn = document.getElementById("cancelEditBtn");
 const taskList = document.getElementById("taskList");
@@ -22,6 +25,7 @@ const completedTasksEl = document.getElementById("completedTasks");
 const overdueTasksEl = document.getElementById("overdueTasks");
 const progressFill = document.getElementById("progressFill");
 const completionPill = document.getElementById("completionPill");
+const upcomingList = document.getElementById("upcomingList");
 const toastEl = document.getElementById("toast");
 
 // ===============================
@@ -57,13 +61,25 @@ function savePreferences() {
   localStorage.setItem(STORAGE_KEYS.filter, state.filter);
 }
 
+function normalizeTask(task) {
+  const completed = Boolean(task.completed);
+  return {
+    ...task,
+    description: task.description || "",
+    progress: Number(task.progress ?? (completed ? 100 : 0)),
+    status: task.status || (completed ? "completed" : "planned"),
+    subtasks: Array.isArray(task.subtasks) ? task.subtasks : [],
+    createdAt: task.createdAt || new Date().toISOString()
+  };
+}
+
 function loadState() {
   const storedTasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.tasks) || "[]");
   const storedTheme = localStorage.getItem(STORAGE_KEYS.theme) || "light";
   const storedSort = localStorage.getItem(STORAGE_KEYS.sort) || "newest";
   const storedFilter = localStorage.getItem(STORAGE_KEYS.filter) || "all";
 
-  state.tasks = Array.isArray(storedTasks) ? storedTasks : [];
+  state.tasks = Array.isArray(storedTasks) ? storedTasks.map(normalizeTask) : [];
   state.theme = storedTheme;
   state.sort = storedSort;
   state.filter = storedFilter;
@@ -97,6 +113,17 @@ function formatCreatedAt(value) {
   });
 }
 
+function formatTimestamp(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
 function getTodayString() {
   return new Date().toISOString().split("T")[0];
 }
@@ -104,6 +131,23 @@ function getTodayString() {
 function isOverdue(task) {
   if (!task.dueDate || task.completed) return false;
   return task.dueDate < getTodayString();
+}
+
+function getDeadlineState(task) {
+  if (!task.dueDate || task.completed) return null;
+  const today = new Date(getTodayString());
+  const dueDate = new Date(task.dueDate);
+  const diffDays = Math.round((dueDate - today) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { label: "Overdue", className: "deadline-overdue" };
+  }
+
+  if (diffDays <= 2) {
+    return { label: "Due soon", className: "deadline-soon" };
+  }
+
+  return null;
 }
 
 function getPriorityValue(priority) {
@@ -115,6 +159,38 @@ function getPriorityValue(priority) {
     case "low":
     default:
       return 1;
+  }
+}
+
+function getStatusLabel(status) {
+  switch (status) {
+    case "in-progress":
+      return "In progress";
+    case "blocked":
+      return "Blocked";
+    case "review":
+      return "Review";
+    case "completed":
+      return "Completed";
+    case "planned":
+    default:
+      return "Planned";
+  }
+}
+
+function getStatusClass(status) {
+  switch (status) {
+    case "in-progress":
+      return "status-in-progress";
+    case "blocked":
+      return "status-blocked";
+    case "review":
+      return "status-review";
+    case "completed":
+      return "status-completed";
+    case "planned":
+    default:
+      return "status-planned";
   }
 }
 
@@ -133,11 +209,44 @@ function getPriorityClass(priority) {
 function buildTaskMarkup(task) {
   const completedClass = task.completed ? "completed" : "";
   const overdueClass = isOverdue(task) ? "overdue" : "";
+  const deadlineState = getDeadlineState(task);
+  const warningClass = deadlineState ? deadlineState.className : "";
   const badgeText = task.priority ? getPriorityLabel(task.priority) : "Medium";
   const categoryText = task.category ? getCategoryLabel(task.category) : "Other";
-
+  const progressValue = Math.max(0, Math.min(100, Number(task.progress) || 0));
+  const statusText = getStatusLabel(task.status);
+  const statusClass = getStatusClass(task.status);
+  const descriptionMarkup = task.description
+    ? `<p class="task-description">${escapeHtml(task.description)}</p>`
+    : "";
+  const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+  const subtasksMarkup = subtasks.length
+    ? `
+        <div class="task-subtasks">
+          <strong>Subtasks</strong>
+          <ul>
+            ${subtasks
+              .map(
+                (subtask) => `
+                  <li class="subtask-item ${subtask.completed ? "done" : ""}" data-subtask-id="${subtask.id}">
+                    <div class="subtask-content">
+                      <label>
+                        <input type="checkbox" ${subtask.completed ? "checked" : ""} />
+                        <span>${escapeHtml(subtask.title)}</span>
+                      </label>
+                      <span class="subtask-time">${subtask.createdAt ? escapeHtml(formatTimestamp(subtask.createdAt)) : ""}</span>
+                    </div>
+                    <button class="subtask-delete" type="button" aria-label="Remove subtask">×</button>
+                  </li>
+                `
+              )
+              .join("")}
+          </ul>
+        </div>
+      `
+    : "";
   return `
-    <li class="task-card ${completedClass} ${overdueClass}" data-task-id="${task.id}" draggable="true">
+    <li class="task-card ${completedClass} ${overdueClass} ${warningClass}" data-task-id="${task.id}" draggable="true">
       <div class="task-main">
         <label class="task-check" aria-label="Mark task as complete">
           <input type="checkbox" ${task.completed ? "checked" : ""} />
@@ -153,11 +262,28 @@ function buildTaskMarkup(task) {
           <div class="task-badges">
             <span class="badge priority-${task.priority || "medium"} ${getPriorityClass(task.priority || "medium")}">${badgeText}</span>
             <span class="badge category">${escapeHtml(categoryText)}</span>
+            <span class="badge status ${statusClass}">${escapeHtml(statusText)}</span>
+            ${deadlineState ? `<span class="badge deadline ${deadlineState.className}">${escapeHtml(deadlineState.label)}</span>` : ""}
+          </div>
+          ${descriptionMarkup}
+          <div class="task-progress">
+            <div class="task-progress-row">
+              <span>Progress</span>
+              <strong>${progressValue}%</strong>
+            </div>
+            <div class="mini-progress-bar" aria-hidden="true">
+              <span style="width: ${progressValue}%"></span>
+            </div>
           </div>
           <div class="task-meta">
             <span>Due: ${escapeHtml(task.dueDate ? formatDate(task.dueDate) : "No due date")}</span>
             <span>Created: ${escapeHtml(formatCreatedAt(task.createdAt))}</span>
           </div>
+          ${subtasksMarkup}
+          <form class="subtask-form" data-task-id="${task.id}">
+            <input type="text" name="subtask" placeholder="Add a subtask..." maxlength="80" />
+            <button type="submit">Add</button>
+          </form>
         </div>
       </div>
     </li>
@@ -219,6 +345,32 @@ function renderTasks() {
   emptyState.classList.toggle("active", state.tasks.length === 0);
   updateFilterButtons();
   renderStatistics();
+  renderUpcomingList();
+}
+
+function renderUpcomingList() {
+  const upcomingTasks = state.tasks
+    .filter((task) => !task.completed && task.dueDate)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+    .slice(0, 5);
+
+  if (!upcomingTasks.length) {
+    upcomingList.innerHTML = '<li class="upcoming-empty">No upcoming deadlines right now.</li>';
+    return;
+  }
+
+  upcomingList.innerHTML = upcomingTasks
+    .map((task) => {
+      const deadlineState = getDeadlineState(task);
+      return `
+        <li class="upcoming-item ${deadlineState ? deadlineState.className : ""}">
+          <strong>${escapeHtml(task.title)}</strong>
+          <span>${escapeHtml(formatDate(task.dueDate))}</span>
+          ${deadlineState ? `<em>${escapeHtml(deadlineState.label)}</em>` : ""}
+        </li>
+      `;
+    })
+    .join("");
 }
 
 function updateFilterButtons() {
@@ -251,6 +403,8 @@ function resetForm() {
   prioritySelect.value = "medium";
   categorySelect.value = "personal";
   dueDateInput.value = "";
+  descriptionInput.value = "";
+  statusSelect.value = "in-progress";
   state.editingId = null;
   addBtn.textContent = "Add Task";
   cancelEditBtn.classList.add("hidden");
@@ -265,29 +419,43 @@ function saveTask() {
     return;
   }
 
+  const status = statusSelect.value;
   const payload = {
     title,
+    description: descriptionInput.value.trim(),
     priority: prioritySelect.value,
     category: categorySelect.value,
-    dueDate: dueDateInput.value
+    dueDate: dueDateInput.value,
+    progress: 0,
+    status
   };
 
   if (state.editingId) {
     state.tasks = state.tasks.map((task) =>
-      task.id === state.editingId ? { ...task, ...payload } : task
+      task.id === state.editingId
+        ? {
+            ...task,
+            ...payload,
+            completed: payload.status === "completed" ? true : task.completed
+          }
+        : task
     );
     saveTasks();
     showToast("Task updated.", "success");
   } else {
+    const taskId = Date.now();
     state.tasks.unshift({
-      id: Date.now(),
+      id: taskId,
       title,
       completed: false,
       priority: payload.priority,
       category: payload.category,
       dueDate: payload.dueDate,
+      progress: payload.progress,
+      status,
       createdAt: new Date().toISOString(),
-      order: state.tasks.length
+      order: state.tasks.length,
+      subtasks: []
     });
     saveTasks();
     showToast("Task added.", "success");
@@ -306,6 +474,8 @@ function startEditing(taskId) {
   prioritySelect.value = task.priority || "medium";
   categorySelect.value = task.category || "personal";
   dueDateInput.value = task.dueDate || "";
+  descriptionInput.value = task.description || "";
+  statusSelect.value = task.status || (task.completed ? "completed" : "in-progress");
   addBtn.textContent = "Save Task";
   cancelEditBtn.classList.remove("hidden");
   taskInput.focus();
@@ -327,14 +497,38 @@ function deleteTask(taskId) {
   showToast("Task deleted.", "success");
 }
 
+function updateTaskStatus(taskId, newStatus) {
+  const task = state.tasks.find((item) => item.id === taskId);
+  if (!task) return;
+
+  task.status = newStatus;
+  task.completed = newStatus === "completed" ? true : false;
+  saveTasks();
+  renderTasks();
+  showToast(`Status updated to ${getStatusLabel(newStatus)}.`, "success");
+}
+
+function calculateProgressFromSubtasks(task) {
+  const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+  if (subtasks.length === 0) return task.progress || 0;
+  const completed = subtasks.filter((s) => s.completed).length;
+  return Math.round((completed / subtasks.length) * 100);
+}
+
 function toggleTask(taskId) {
   const task = state.tasks.find((item) => item.id === taskId);
   if (!task) return;
 
-  task.completed = !task.completed;
+  const nextCompleted = !task.completed;
+  const nextStatus = nextCompleted ? "completed" : "in-progress";
+
+  task.completed = nextCompleted;
+  task.status = nextStatus;
+  task.progress = calculateProgressFromSubtasks(task);
+
   saveTasks();
   renderTasks();
-  showToast(task.completed ? "Task completed." : "Task marked active.", "success");
+  showToast(nextCompleted ? "Task completed." : "Task marked active.", "success");
 }
 
 function clearCompletedTasks() {
@@ -348,6 +542,44 @@ function clearCompletedTasks() {
   saveTasks();
   renderTasks();
   showToast("Completed tasks cleared.", "success");
+}
+
+function addSubtask(taskId, subtaskTitle) {
+  const task = state.tasks.find((item) => item.id === taskId);
+  const title = subtaskTitle.trim();
+  if (!task || !title) return;
+
+  task.subtasks = [
+    ...(Array.isArray(task.subtasks) ? task.subtasks : []),
+    { id: Date.now(), title, completed: false, createdAt: new Date().toISOString() }
+  ];
+
+  saveTasks();
+  renderTasks();
+  showToast("Subtask added.", "success");
+}
+
+function toggleSubtask(taskId, subtaskId) {
+  const task = state.tasks.find((item) => item.id === taskId);
+  if (!task) return;
+
+  task.subtasks = (Array.isArray(task.subtasks) ? task.subtasks : []).map((subtask) =>
+    subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask
+  );
+
+  task.progress = calculateProgressFromSubtasks(task);
+
+  saveTasks();
+  renderTasks();
+}
+
+function removeSubtask(taskId, subtaskId) {
+  const task = state.tasks.find((item) => item.id === taskId);
+  if (!task) return;
+
+  task.subtasks = (Array.isArray(task.subtasks) ? task.subtasks : []).filter((subtask) => subtask.id !== subtaskId);
+  saveTasks();
+  renderTasks();
 }
 
 // ===============================
@@ -497,10 +729,39 @@ function bindEvents() {
   });
 
   taskList.addEventListener("change", (event) => {
-    if (event.target.matches('input[type="checkbox"]')) {
+    if (event.target.matches('.task-check input[type="checkbox"]')) {
       const taskId = Number(event.target.closest(".task-card").dataset.taskId);
       toggleTask(taskId);
     }
+
+    if (event.target.matches('.subtask-item input[type="checkbox"]')) {
+      const subtaskItem = event.target.closest(".subtask-item");
+      const taskId = Number(subtaskItem.closest(".task-card").dataset.taskId);
+      const subtaskId = Number(subtaskItem.dataset.subtaskId);
+      toggleSubtask(taskId, subtaskId);
+    }
+
+  });
+
+  taskList.addEventListener("submit", (event) => {
+    const form = event.target.closest(".subtask-form");
+    if (!form) return;
+
+    event.preventDefault();
+    const taskId = Number(form.dataset.taskId);
+    const input = form.querySelector('input[name="subtask"]');
+    addSubtask(taskId, input.value);
+    input.value = "";
+  });
+
+  taskList.addEventListener("click", (event) => {
+    const deleteButton = event.target.closest(".subtask-delete");
+    if (!deleteButton) return;
+
+    const subtaskItem = deleteButton.closest(".subtask-item");
+    const taskId = Number(subtaskItem.closest(".task-card").dataset.taskId);
+    const subtaskId = Number(subtaskItem.dataset.subtaskId);
+    removeSubtask(taskId, subtaskId);
   });
 
   taskList.addEventListener("dragstart", handleDragStart);

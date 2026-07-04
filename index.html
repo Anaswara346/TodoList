@@ -69,6 +69,16 @@
               maxlength="140"
             />
 
+            <label class="field">
+              <span>Task description</span>
+              <textarea
+                id="descriptionInput"
+                name="description"
+                rows="2"
+                placeholder="Add details, requirements, or notes for this task..."
+              ></textarea>
+            </label>
+
             <div class="task-meta-grid">
               <label class="field">
                 <span>Priority</span>
@@ -95,6 +105,17 @@
                 <span>Due date</span>
                 <input id="dueDateInput" name="dueDate" type="date" />
               </label>
+
+              <label class="field">
+                <span>Status</span>
+                <select id="statusSelect" name="status">
+                  <option value="planned">Planned</option>
+                  <option value="in-progress" selected>In progress</option>
+                  <option value="blocked">Blocked</option>
+                  <option value="review">Review</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </label>
             </div>
 
             <div class="composer-actions">
@@ -102,6 +123,16 @@
               <button id="cancelEditBtn" class="secondary-btn hidden" type="button">Cancel</button>
             </div>
           </form>
+        </section>
+
+        <section class="upcoming-card" aria-label="Deadline watch">
+          <div class="stats-header">
+            <div>
+              <p class="eyebrow">Upcoming</p>
+              <h2>Deadline Watch</h2>
+            </div>
+          </div>
+          <ul id="upcomingList" class="upcoming-list"></ul>
         </section>
 
         <section class="toolbar" aria-label="Task controls">
